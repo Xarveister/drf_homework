@@ -14,14 +14,16 @@ class LessonSerializer(serializers.ModelSerializer):
 
 
 class CourseSerializer(serializers.ModelSerializer):
-    lessons_count = serializers.IntegerField(source='lesson_set.count', read_only=True)
-    lessons = serializers.SerializerMethodField()
-
-    owner = SlugRelatedField(slug_field='first_name', queryset=User.objects.all())
+    lessons_count = serializers.SerializerMethodField()
+    lessons = LessonSerializer(source='lesson_set', read_only=True, many=True)
 
     class Meta:
         model = Course
         fields = '__all__'
+
+    @staticmethod
+    def get_lessons_count(obj):
+        return obj.lesson_set.all().count()
 
 
 class PaymentSerializer(serializers.ModelSerializer):
@@ -29,7 +31,7 @@ class PaymentSerializer(serializers.ModelSerializer):
 
     course = SlugRelatedField(slug_field='name', queryset=Course.objects.all())
     lesson = SlugRelatedField(slug_field='name', queryset=Lesson.objects.all())
-    owner = SlugRelatedField(slug_field='first_name', queryset=User.objects.all())
+    owner = SlugRelatedField(slug_field='email', queryset=User.objects.all())
 
     class Meta:
         model = Payment
