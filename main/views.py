@@ -5,8 +5,9 @@ from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import IsAuthenticated
 from main.permissions import IsModeratorOrReadOnly, IsCourseOrLessonOwner, IsPaymentOwner, IsCourseOwner
 
-from main.models import Course, Lesson, Payment
-from main.serializers import CourseSerializer, LessonSerializer, PaymentSerializer
+from main.paginators import EducationPaginator
+from main.models import Course, Lesson, Payment, Subscription
+from main.serializers import CourseSerializer, LessonSerializer, PaymentSerializer, SubscriptionSerializer
 from users.models import UserRoles
 
 
@@ -14,6 +15,7 @@ class CourseViewSet(viewsets.ModelViewSet):
     """ViewSet для модели обучающего курса"""
     serializer_class = CourseSerializer
     permission_classes = [IsAuthenticated, IsModeratorOrReadOnly | IsCourseOwner]
+    pagination_class = EducationPaginator
 
     def get_queryset(self):
         """Переопределяем queryset, чтобы доступ к обьекту имели только его владельцы и модератор"""
@@ -45,6 +47,7 @@ class LessonCreateAPIView(generics.CreateAPIView):
     """Generic-класс для создания объекта модели Lesson"""
     serializer_class = LessonSerializer
     permission_classes = [IsAuthenticated, IsModeratorOrReadOnly | IsCourseOrLessonOwner]
+    pagination_class = EducationPaginator
 
     def perform_create(self, serializer):
         """ Переопределяем метод создания обьекта с условием, чтобы модераторы не могли создавать обьект """
@@ -149,13 +152,11 @@ class PaymentRetrieveAPIView(generics.RetrieveAPIView):
 
 
 class PaymentsCreateAPIView(generics.CreateAPIView):
-    """ Generic - класс для создания нового платежа """
 
     serializer_class = PaymentSerializer
     permission_classes = [IsAuthenticated, IsPaymentOwner]
 
     def perform_create(self, serializer):
-        """ Переопределяем метод создания обьекта с условием, чтобы модераторы не могли создавать обьект """
 
         if self.request.user.role == UserRoles.MODERATOR:
             raise PermissionDenied("Вы не можете создавать новые платежи!")
@@ -163,3 +164,13 @@ class PaymentsCreateAPIView(generics.CreateAPIView):
             new_payment = serializer.save()
             new_payment.owner = self.request.user
             new_payment.save()
+
+
+class SubscriptionViewSet(viewsets.ModelViewSet):
+    serializer_class = SubscriptionSerializer
+    queryset = Subscription.objects.all()
+    lookup_field = 'id'
+
+    def perform_create(self, serializer):
+        new_subscription = serializer.save(user=self.request.user)
+        new_subscription.save()
