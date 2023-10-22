@@ -10,7 +10,7 @@ from main.services import create_stripe_checkout_session
 from main.models import Course, Lesson, Payment, Subscription
 from main.serializers import CourseSerializer, LessonSerializer, PaymentSerializer, SubscriptionSerializer
 from users.models import UserRoles
-
+from main.tasks import send_updated_email
 
 class CourseViewSet(viewsets.ModelViewSet):
     """ViewSet для модели обучающего курса"""
@@ -58,7 +58,7 @@ class LessonCreateAPIView(generics.CreateAPIView):
         new_lesson = serializer.save()
         new_lesson.owner = self.request.user
         new_lesson.save()
-
+        send_updated_email.delay(new_course.course_id)
 
 class LessonListAPIView(generics.ListAPIView):
     """Generic-класс для просмотра всех объектов Lesson"""
