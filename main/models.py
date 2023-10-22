@@ -11,6 +11,7 @@ class Course(models.Model):
     course_description = models.TextField(verbose_name='Описание')
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, verbose_name='владелец курса',
                               **NULLABLE)
+    price = models.PositiveIntegerField(default=0, verbose_name='Цена')
 
     def __str__(self):
         return f'{self.course_name}'
@@ -37,6 +38,10 @@ class Lesson(models.Model):
         verbose_name = 'урок'
         verbose_name_plural = 'уроки'
 
+CURRENCY = [
+        ('usd', 'USD'),
+        ('eur', 'EURO')
+    ]
 
 class Payment(models.Model):
     METHOD_CHOICES = (
@@ -44,14 +49,15 @@ class Payment(models.Model):
         ('TRANSFER', 'Перевод на счет'),
     )
 
-    date = models.DateTimeField(verbose_name='Дата оплаты')
+    date = models.DateTimeField(auto_now_add=True, verbose_name='Дата оплаты')
     course = models.ForeignKey(Course, on_delete=models.SET_NULL, **NULLABLE, verbose_name='Оплаченный курс')
     lesson = models.ForeignKey(Lesson, on_delete=models.SET_NULL, **NULLABLE, verbose_name='Оплаченный урок')
     amount = models.PositiveIntegerField(verbose_name='Сумма оплаты')
-    method = models.CharField(max_length=25, choices=METHOD_CHOICES, verbose_name='Способ оплаты')
+    method = models.CharField(max_length=20, verbose_name='Метод оплаты', default='transfer', choices=METHOD_CHOICES)
 
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, verbose_name='владелец платежа',
                               **NULLABLE)
+    currency = models.CharField(choices=CURRENCY, verbose_name='валюта', default='usd')
 
     def __str__(self):
         return f'Платеж от {self.user} на сумму {self.amount}'
