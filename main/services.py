@@ -1,21 +1,36 @@
-from django.contrib.sites import requests
-from django.shortcuts import redirect
+import stripe
 
 from config.settings import STRIPE_SECRET_KEY
+from main.models import Course, Payment
 
 
-def create_checkout_session(product, price):
+stripe.api_key = STRIPE_SECRET_KEY
 
-    url = 'https://api.stripe.com/v1/checkout/sessions'
 
-    headers = {'Authorization': f'Bearer {STRIPE_SECRET_KEY}'}
-    data = {
-        'product': product,
-        'price': price
-    }
-    response = requests.post(url, headers, data)
-    if response.status_code != 200:
-        raise Exception(f"Ошибка получения данных {response.status_code}")
-    data_checkout_session = response.json()
+def create_stripe_checkout_session(course_id):
+    course = Course.objects.get(pk=course_id)
 
-    return redirect(data_checkout_session.url)
+    product = stripe.Product.create(name=course.title)
+    price = stripe.Price.create(unit_amount=course.price, currency='usd', product=product.get('id'))
+    session = stripe.checkout.Session.create(
+        success_url="https://example.com/success",
+        line_items=[
+            {
+                "price": price.id,
+                "quantity": 1,
+            },
+        ],
+        mode="payment",
+    )
+    return session
+
+
+def get_stripe_payment(pk):
+
+    payment = Payment.objects.get(pk=pk)
+
+    payment_detail = stripe.checkout.Session.retrieve(
+        payment.stripe_id,
+    )
+
+    return payment_detail

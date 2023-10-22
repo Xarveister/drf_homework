@@ -4,8 +4,9 @@ from rest_framework.filters import OrderingFilter
 from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import IsAuthenticated
 from main.permissions import IsModeratorOrReadOnly, IsCourseOrLessonOwner, IsPaymentOwner, IsCourseOwner
-
+from django.shortcuts import redirect
 from main.paginators import EducationPaginator
+from main.services import create_stripe_checkout_session
 from main.models import Course, Lesson, Payment, Subscription
 from main.serializers import CourseSerializer, LessonSerializer, PaymentSerializer, SubscriptionSerializer
 from users.models import UserRoles
@@ -153,17 +154,19 @@ class PaymentRetrieveAPIView(generics.RetrieveAPIView):
 
 class PaymentsCreateAPIView(generics.CreateAPIView):
 
-    serializer_class = PaymentSerializer
-    permission_classes = [IsAuthenticated, IsPaymentOwner]
+    def create(self, request, *args, **kwargs):
+        course_id = request.data.get('course')
+        course = Course.objects.get(pk=course_id)
+        session = create_stripe_checkout_session(course_id)
 
-    def perform_create(self, serializer):
-
-        if self.request.user.role == UserRoles.MODERATOR:
-            raise PermissionDenied("Вы не можете создавать новые платежи!")
-        else:
-            new_payment = serializer.save()
-            new_payment.owner = self.request.user
-            new_payment.save()
+        Payment.objects.create(
+            user=self.request.user,
+            amount=session["amount_total"],
+            course=course,
+            stripe_id=session['id'],
+            stripe_status=session['status']
+        )
+        return redirect(session.url)
 
 
 class SubscriptionViewSet(viewsets.ModelViewSet):

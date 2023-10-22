@@ -38,16 +38,16 @@ class Lesson(models.Model):
         verbose_name = 'урок'
         verbose_name_plural = 'уроки'
 
-CURRENCY = [
-        ('usd', 'USD'),
-        ('eur', 'EURO')
-    ]
 
 class Payment(models.Model):
     METHOD_CHOICES = (
         ('CASH', 'Наличные'),
         ('TRANSFER', 'Перевод на счет'),
     )
+    CURRENCY = [
+        ('usd', 'USD'),
+        ('eur', 'EURO')
+    ]
 
     date = models.DateTimeField(auto_now_add=True, verbose_name='Дата оплаты')
     course = models.ForeignKey(Course, on_delete=models.SET_NULL, **NULLABLE, verbose_name='Оплаченный курс')
@@ -58,6 +58,8 @@ class Payment(models.Model):
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, verbose_name='владелец платежа',
                               **NULLABLE)
     currency = models.CharField(choices=CURRENCY, verbose_name='валюта', default='usd')
+    stripe_id = models.CharField(max_length=100, verbose_name='Stripe ID', **NULLABLE)
+    stripe_status = models.CharField(max_length=50, verbose_name='Stripe статус', **NULLABLE)
 
     def __str__(self):
         return f'Платеж от {self.user} на сумму {self.amount}'
