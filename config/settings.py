@@ -85,7 +85,8 @@ DATABASES = {
         'ENGINE': 'django.db.backends.postgresql',
         'NAME': config('DB_NAME'),
         'USER': 'postgres',
-        'PASSWORD': config('DB_USER_PASSWORD')
+        'PASSWORD': config('DB_USER_PASSWORD'),
+        'HOST': 'db'
     }
 }
 
@@ -148,7 +149,7 @@ SIMPLE_JWT = {
 STRIPE_SECRET_KEY = config('STRIPE_SECRET_KEY')
 STRIPE_PUBLIC_KEY = config('STRIPE_PUBLIC_KEY')
 
-CELERY_BROKER_URL = 'redis://localhost:6379'  # URL-адрес брокера сообщений, например Redis
+CELERY_BROKER_URL = 'redis://localhost:6379/0'  # URL-адрес брокера сообщений, например Redis
 CELERY_RESULT_BACKEND = 'redis://localhost:6379'  # URL-адрес брокера результатов, также Redis
 CELERYBEAT_SCHEDULER = 'djcelery.schedulers.DatabaseScheduler'
 CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
